@@ -1,6 +1,5 @@
 const http = require('http');
 const fs = require('fs')
-const makeDir = require('make-dir');
 const server = http.createServer();
 const fse = require("fs-extra");
 var path = require('path');
@@ -20,15 +19,27 @@ function playlist(url) {
 
     let size = 0
     video.on('info', function (info) {
-        size = info.size;
-        // await makeDir(__dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`)
-        var dir = __dirname+ `/downloads/${info.playlist_uploader}/${info.playlist}/`;
-        fse.ensureDirSync(dir);
-        var output = path.join(__dirname+ '/downloads' , `${info.playlist_uploader}/${info.playlist}/`,`#0${info.playlist_index} ` +`${info.fulltitle}` + '.mp4');
-        // var output = path.join(__dirname + '/', `#0${info.playlist_index} ` + `${info.fulltitle}` + '.mp4');
-        console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`)
-        video.pipe(fs.createWriteStream(output));
-    });
+        try {
+            size = info.size;
+            // await makeDir(__dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`)
+            var dir = __dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`;
+            fse.ensureDirSync(dir);
+            let fulltitle = info.fulltitle;
+            // console.log("TCL: playlist -> fulltitle", fulltitle)
+            let newName = fulltitle.replace(/\//g, "-");
+            // console.log("TCL: playlist -> newName", newName)
+            var output = path.join(__dirname + '/downloads', `${info.playlist_uploader}/${info.playlist}/`, `#0${info.playlist_index} ` + `${newName}` + '.mp4');
+            // var output = path.join(__dirname + '/', `#0${info.playlist_index} ` + `${info.fulltitle}` + '.mp4');
+            console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`);
+            video.pipe(fs.createWriteStream(output));
+
+        } 
+        catch (error) {
+            console.log("TCL: playlist -> error", error)
+
+        }
+    }
+    );
 
     var pos = 0;
     video.on('data', function data(chunk) {
@@ -47,7 +58,7 @@ function playlist(url) {
 }
 
 
-playlist('https://www.youtube.com/playlist?list=PLWKjhJtqVAbnZtkAI3BqcYxKnfWn_C704')
+playlist('https://www.youtube.com/playlist?list=PLWKjhJtqVAbljtmmeS0c-CEl2LdE-eR_F')
 
 
 const port = process.env.PORT || 3000;
