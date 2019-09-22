@@ -1,17 +1,42 @@
 const http = require('http');
+
+const express = require('express');
+const app = express();
+// app.use(express.json());
+const bodyParser = require('body-parser');
 const fs = require('fs')
-const server = http.createServer();
 const fse = require("fs-extra");
 var path = require('path');
 var ytdl = require('youtube-dl');
 
+
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Origin , X-Requested-With , Content-Type , Accept");
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET , POST , PATCH , DELETE , OPTIONS"
+    )
+    next();
+});
+
+
+app.get('/' ,  (req , res , next)=> {
 function playlist(url) {
+
     // await makeDir(__dirname+ '/uploads')
     'use strict';
     var video = ytdl(
         url,
         ['--format=22'],
     );
+
+    console.log('waiting to get data');
 
     video.on('error', function error(err) {
         console.log('error 2:', err);
@@ -21,19 +46,19 @@ function playlist(url) {
     video.on('info', function (info) {
         try {
             size = info.size;
-            // await makeDir(__dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`)
             var dir = __dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`;
             fse.ensureDirSync(dir);
             let fulltitle = info.fulltitle;
-            // console.log("TCL: playlist -> fulltitle", fulltitle)
             let newName = fulltitle.replace(/\//g, "-");
-            // console.log("TCL: playlist -> newName", newName)
             var output = path.join(__dirname + '/downloads', `${info.playlist_uploader}/${info.playlist}/`, `#0${info.playlist_index} ` + `${newName}` + '.mp4');
-            // var output = path.join(__dirname + '/', `#0${info.playlist_index} ` + `${info.fulltitle}` + '.mp4');
             console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`);
             video.pipe(fs.createWriteStream(output));
+            
+            
+            // var output = path.join(__dirname + `#0${info.playlist_index} ` + `${newName}` + '.mp4');
+            // video.pipe(fs.createReadStream(output));
 
-        } 
+        }
         catch (error) {
             console.log("TCL: playlist -> error", error)
 
@@ -53,19 +78,20 @@ function playlist(url) {
         }
     });
 
+    video.on('end', function () {
+        console.log('finished downloading!');
+    });
+
     video.on('next', playlist);
 
 }
 
 
-playlist('https://www.youtube.com/playlist?list=PLWKjhJtqVAbljtmmeS0c-CEl2LdE-eR_F')
+playlist(req.body.url)
 
 
-const port = process.env.PORT || 3000;
+    // res.end(req.body.url)
+});
+    
 
-
-
-
-server.listen(port, () => {
-    console.log(`we are listen to port ${port}`);
-})
+module.exports = app;
