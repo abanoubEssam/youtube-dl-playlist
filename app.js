@@ -12,7 +12,7 @@ var ytdl = require('youtube-dl');
 
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
@@ -25,73 +25,95 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get('/', async (req, res, next) => {
+    res.write('<html>')
+    res.write('<head> <title> welcome to ytdl </title>')
+    res.write('<body> <form action="/" method="POST"> <input type="text" name="url" ><button type="submit" >download</button></form> </body>')
+    res.write('</html>')
+    res.end()
+})
+app.post('/', async (req, res, next) => {
+    // res.download('./downloads/7.jpg')
+    console.log('body: ==== ', req.body.url)
+    async function playlist(url) {
 
-app.get('/' ,  (req , res , next)=> {
-function playlist(url) {
+        // await makeDir(__dirname+ '/uploads')
+        'use strict';
+        var video = ytdl(
+            url,
+            ['--format=22'],
+        );
 
-    // await makeDir(__dirname+ '/uploads')
-    'use strict';
-    var video = ytdl(
-        url,
-        ['--format=22'],
-    );
+        console.log('waiting to get data');
 
-    console.log('waiting to get data');
+        video.on('error', function error(err) {
+            console.log('error 2:', err);
+        });
 
-    video.on('error', function error(err) {
-        console.log('error 2:', err);
-    });
+        let size = 0
+        const getbody = [];
+        await video.on('info', async function (info) {
+            try {
+                size = info.size;
+                var dir = __dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`;
+                fse.ensureDirSync(dir);
+                let fulltitle = info.fulltitle;
+                let newName = fulltitle.replace(/\//g, "-");
+                var output = path.join(__dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/#0${info.playlist_index} ${newName}.mp4`);
+                console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`);
+                await video.pipe(fs.createWriteStream(output));
 
-    let size = 0
-    video.on('info', function (info) {
-        try {
-            size = info.size;
-            var dir = __dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/`;
-            fse.ensureDirSync(dir);
-            let fulltitle = info.fulltitle;
-            let newName = fulltitle.replace(/\//g, "-");
-            var output = path.join(__dirname + '/downloads', `${info.playlist_uploader}/${info.playlist}/`, `#0${info.playlist_index} ` + `${newName}` + '.mp4');
-            console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`);
-            video.pipe(fs.createWriteStream(output));
-            
-            
-            // var output = path.join(__dirname + `#0${info.playlist_index} ` + `${newName}` + '.mp4');
-            // video.pipe(fs.createReadStream(output));
+                // var output = path.join(__dirname + `#0${info.playlist_index} ` + `${newName}` + '.mp4');
+                // video.pipe(fs.createReadStream(output));
 
+            }
+            catch (error) {
+                console.log("TCL: playlist -> error", error)
+
+            }
         }
-        catch (error) {
-            console.log("TCL: playlist -> error", error)
+        );
 
-        }
+        var pos = 0;
+        await video.on('data', function data(chunk) {
+            pos += chunk.length;
+            // `size` should not be 0 here.
+            if (size) {
+                var percent = (pos / size * 100).toFixed(2);
+                process.stdout.cursorTo(0);
+                process.stdout.clearLine(1);
+                process.stdout.write(percent + '%');
+            }
+            getbody.push(chunk);
+        });
+
+        // console.log(video.on('end' , function(){}));
+        video.on('end', function () {
+            // console.log('===================')
+            // res.contentType('video/mp4');
+            // console.log('getbody => ', getbody);
+            // console.log(res);
+            // const dataconcat = Buffer.concat(getbody).toString();
+            // console.log("TCL: playlist -> dataconcat", dataconcat)
+            // res.send(dataconcat);
+            
+            // for (videos of getbody) {
+            //     res.contentType('video/mp4');
+            //     // res.send(video)
+            //     video.pipe(videos)
+            // }
+            console.log('finished downloading!');
+        });
+        video.on('next', playlist);
+
     }
-    );
-
-    var pos = 0;
-    video.on('data', function data(chunk) {
-        pos += chunk.length;
-        // `size` should not be 0 here.
-        if (size) {
-            var percent = (pos / size * 100).toFixed(2);
-            process.stdout.cursorTo(0);
-            process.stdout.clearLine(1);
-            process.stdout.write(percent + '%');
-        }
-    });
-
-    video.on('end', function () {
-        console.log('finished downloading!');
-    });
-
-    video.on('next', playlist);
-
-}
 
 
-playlist(req.body.url)
+    playlist(req.body.url)
 
 
     // res.end(req.body.url)
 });
-    
+
 
 module.exports = app;
