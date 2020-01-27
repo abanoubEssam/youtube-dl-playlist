@@ -45,9 +45,11 @@ app.post('/', async (req, res, next) => {
         );
 
         console.log('waiting to get data');
-
+        res.write('<h1> waiting to get data....... </h1>')
         video.on('error', function error(err) {
             console.log('error 2:', err);
+            res.write(`<p> ${err} ..... </p> `)
+
         });
 
         let size = 0
@@ -61,6 +63,7 @@ app.post('/', async (req, res, next) => {
                 let newName = fulltitle.replace(/\//g, "-");
                 var output = path.join(__dirname + `/downloads/${info.playlist_uploader}/${info.playlist}/#0${info.playlist_index} ${newName}.mp4`);
                 console.log(`playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle}`);
+                res.write(`<p> playlist: ${info.playlist} - video:  #0${info.playlist_index} ${info.fulltitle} downloading..... </p> `)
                 await video.pipe(fs.createWriteStream(output));
 
                 // var output = path.join(__dirname + `#0${info.playlist_index} ` + `${newName}` + '.mp4');
@@ -69,6 +72,7 @@ app.post('/', async (req, res, next) => {
             }
             catch (error) {
                 console.log("TCL: playlist -> error", error)
+                res.write(`<p> ${error} ..... </p> `)
 
             }
         }
@@ -83,25 +87,15 @@ app.post('/', async (req, res, next) => {
                 process.stdout.cursorTo(0);
                 process.stdout.clearLine(1);
                 process.stdout.write(percent + '%');
+                // res.write(`<p> ${percent} % downloading..... </p> `)
             }
             getbody.push(chunk);
+            // res.write(chunk)
         });
 
         // console.log(video.on('end' , function(){}));
         video.on('end', function () {
-            // console.log('===================')
-            // res.contentType('video/mp4');
-            // console.log('getbody => ', getbody);
-            // console.log(res);
-            // const dataconcat = Buffer.concat(getbody).toString();
-            // console.log("TCL: playlist -> dataconcat", dataconcat)
-            // res.send(dataconcat);
-            
-            // for (videos of getbody) {
-            //     res.contentType('video/mp4');
-            //     // res.send(video)
-            //     video.pipe(videos)
-            // }
+            console.log('res#################');
             console.log('finished downloading!');
         });
         video.on('next', playlist);
