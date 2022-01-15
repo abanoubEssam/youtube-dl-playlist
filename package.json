@@ -24,7 +24,7 @@
     "fs-extra": "^8.1.0",
     "make-dir": "^3.0.0",
     "nodemon": "^1.19.2",
-    "shelljs": "^0.8.3",
+    "shelljs": "^0.8.5",
     "youtube-dl": "^2.0.1"
   }
 }
